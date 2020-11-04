@@ -62,8 +62,8 @@ MODEL_CLASSES = {
 }
 
 TASK_ADDED_SPECIAL_TOKEN = {
-    "mnli": ['<label_ent>', '<label_neu>', '<label_ctr>'],
-    "mnli-mm": ['<label_ent>', '<label_neu>', '<label_ctr>'],
+    "mnli": ['<label_ctr>', '<label_neu>', '<label_ent>'],
+    "mnli-mm": ['<label_ctr>', '<label_neu>', '<label_ent>'],
 }
 
 def set_seed(args):
