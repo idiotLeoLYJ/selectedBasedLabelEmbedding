@@ -95,3 +95,10 @@ class RobertaForSelectedBasedLabelModel(RobertaPreTrainedModel):
 ## Q
 
 依然是随机预测
+
+## baseline
+
+roberta - roberta-base
+
+task: mnli\mnli-mm
+evaluation：87.1\86.9
