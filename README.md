@@ -57,39 +57,23 @@ class RobertaForSelectedBasedLabelModel(RobertaPreTrainedModel):
             return_dict=return_dict,
         )
 
-        last_layer_hidden = outputs[2][-1]  # [batch_size, seq_len, hidden_dim]
-        last_layer_contextual_hidden = outputs[1]  # [batch_size, hidden_dim]
+        contextual_hidden = outputs[2][-1][:, 0, :]  # [batch_size, 1, hidden_dim]
+        label_hidden = outputs[2][-1][:, 1:4, :]   # [batch_size, 3, hidden_dim]
 
+        loss = None
         if labels is not None:
-            total_loss = None
-            total_weights = 0
-            all_logits = []
-            # labels_index=labels.detach().cpu().numpy()
-            for ix, (label_sample, context_sample, label) in enumerate(
-                    zip(last_layer_hidden, list(last_layer_contextual_hidden), labels)):
-                label_sample = last_layer_hidden[ix]
-                loss_fct = torch.nn.CrossEntropyLoss()
+            if self.num_labels == 1:
+                # We are doing regression
+                # loss_fct = MSELoss()
+                # loss = loss_fct(logits.view(-1), labels.view(-1))
+                pass
+            else:
+                loss_fct = CrossEntropyLoss()
+                temp = torch.bmm(label_hidden,
+                                 contextual_hidden.view(contextual_hidden.size()[0], -1, 1)).squeeze()  # [batch_size, 3]
+                loss = loss_fct(temp,labels.view(-1))
 
-                # label_sample[1]代表第一个label_token对应位置的hidden_states
-                # 以此类推
-                
-                logits_contra = label_sample[1].view(-1) @ context_sample.view(-1, 1)
-                logits_neural = label_sample[2].view(-1) @ context_sample.view(-1, 1)
-                logits_entail = label_sample[3].view(-1) @ context_sample.view(-1, 1)
-
-                logits = torch.cat([logits_contra, logits_neural, logits_entail], dim=0).unsqueeze(dim=0)
-
-                loss = loss_fct(logits, label.unsqueeze(dim=0))
-
-                if total_loss is None:
-                    total_loss = loss
-                else:
-                    total_loss += loss * (ix + 1)
-                total_weights += ix + 1
-
-                all_logits.append(np.squeeze(logits.detach().cpu().numpy()))
-
-        return (total_loss / total_weights,) + (all_logits,) + outputs
+        return (loss,) + (temp,) + outputs
 ```
 
 ## Q
